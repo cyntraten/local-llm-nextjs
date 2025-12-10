@@ -1,3 +1,4 @@
+import { buildPromptWithSystem } from "@/lib/sendMessages";
 import { getUserSessionId } from "@/shared/lib/auth/get-user-session-id";
 import { prisma } from "@/shared/lib/prisma/prisma-client";
 import { NextRequest, NextResponse } from "next/server";
@@ -52,6 +53,8 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    const promptWithSystem = buildPromptWithSystem(user?.systemPrompt, prompt);
+
     const encoder = new TextEncoder();
     let fullResponse = "";
 
@@ -60,7 +63,7 @@ export async function POST(req: NextRequest) {
         try {
           const response = await ollama.chat({
             model,
-            messages: [{ role: "user", content: prompt }],
+            messages: [{ role: "user", content: promptWithSystem }],
             stream: true,
             options: {
               temperature: user?.temperature || 0.5,

@@ -1,11 +1,11 @@
+import { buildPromptWithSystem } from "@/lib/sendMessages";
 import { getUserSessionId } from "@/shared/lib/auth/get-user-session-id";
 import { prisma } from "@/shared/lib/prisma/prisma-client";
 import { NextRequest, NextResponse } from "next/server";
 import ollama from "ollama";
 
-//TODO DRY
 function cleanResponse(text: string): string {
-  return text.replace(/<think>[\s\S]*?<\/think>/g, "");
+  return text.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
 }
 
 export async function POST(req: NextRequest) {
@@ -18,19 +18,18 @@ export async function POST(req: NextRequest) {
         message: "LLM_HOST is not defined",
       });
     }
+
     const body = await req.json();
     const { messageId } = body;
     if (!messageId) {
       return NextResponse.json({
         error: true,
-        message: "User prompt is missing",
+        message: "Message ID is missing",
       });
     }
 
     const messageData = await prisma.messages.findFirst({
-      where: {
-        id: messageId,
-      },
+      where: { id: messageId },
     });
 
     if (!messageData) {
@@ -57,20 +56,20 @@ export async function POST(req: NextRequest) {
     }
 
     const user = await prisma.users.findFirst({
-      where: {
-        id: Number(userId),
-      },
+      where: { id: Number(userId) },
     });
 
     const encoder = new TextEncoder();
     let fullResponse = "";
+
+    const promptWithSystem = buildPromptWithSystem(user?.systemPrompt, prompt);
 
     const stream = new ReadableStream({
       async start(controller) {
         try {
           const response = await ollama.chat({
             model,
-            messages: [{ role: "user", content: prompt }],
+            messages: [{ role: "user", content: promptWithSystem }],
             stream: true,
             options: { temperature: user?.temperature || 0.5 },
           });
@@ -85,7 +84,7 @@ export async function POST(req: NextRequest) {
 
           controller.close();
 
-          const prismaResult = await prisma.messages.create({
+          const aiMessage = await prisma.messages.create({
             data: {
               text: fullResponse,
               chatId,
@@ -95,28 +94,24 @@ export async function POST(req: NextRequest) {
             },
           });
 
-          if (!prismaResult) {
-            throw new Error(`[DB_POST_ERROR] for answer in Chat: ${chatId}`);
-          } else {
-            await prisma.messages.update({
-              where: {
-                id: messageId,
-              },
-              data: {
-                loading: "succeeded",
-              },
-            });
+          if (!aiMessage) {
+            throw new Error(
+              `[DB_POST_ERROR] Failed to save AI response in chat: ${chatId}`
+            );
           }
+
+          await prisma.messages.update({
+            where: { id: messageId },
+            data: { loading: "succeeded" },
+          });
         } catch (e) {
           await prisma.messages.update({
-            data: {
-              loading: "failed",
-            },
-            where: {
-              id: messageId,
-            },
+            where: { id: messageId },
+            data: { loading: "failed" },
           });
+
           console.error("AI resend message stream error: ", e);
+          controller.error(e);
         }
       },
     });
@@ -127,9 +122,7 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     console.error("Router /api/chat/resendMessage error: ", e);
     return NextResponse.json(
-      {
-        message: e,
-      },
+      { message: "Internal server error", error: true },
       { status: 500 }
     );
   }
