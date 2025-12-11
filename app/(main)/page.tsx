@@ -8,10 +8,6 @@ export default function Home() {
         <div className="mb-4">
           <ChatBoxHeader />
         </div>
-
-        <div className="w-full">
-          <hr className="border-t-[1px] border-gray-300" />
-        </div>
       </div>
       <div className="flex-grow flex items-center px-4 py-8">
         <ChatBox className="w-full min-h-[200px] flex flex-col justify-center md:pr-[10%] md:pl-[10%] pr-0 pl-0 h-full" />
