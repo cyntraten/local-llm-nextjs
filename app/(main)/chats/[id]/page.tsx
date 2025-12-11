@@ -36,10 +36,6 @@ export default function Home() {
         <div className="mb-4">
           <ChatBoxHeader />
         </div>
-
-        <div className="w-full">
-          <hr className="border-t-[1px] border-gray-300" />
-        </div>
       </div>
       <div className="flex-grow flex items-center">
         <ChatBoxCreatedChat className="w-full min-h-[200px] flex flex-col justify-center pr-0 pl-0 h-full" />

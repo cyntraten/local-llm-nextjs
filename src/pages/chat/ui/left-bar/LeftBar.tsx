@@ -56,22 +56,16 @@ export const LeftBar = ({ className }: Props) => {
               ></button>
             </div>
           </div>
-          <SidebarGroup>
+          <SidebarGroup className="pl-0">
             <Link
               href="/"
-              className="hover:bg-gray-500 rounded-md mt-2 block w-full"
+              className="hover:bg-gray-500 rounded-md p-2 mt-2 block w-full"
             >
               New chat
             </Link>
-            <Link
-              href="/"
-              className="hover:bg-gray-500 rounded-md mt-2 block w-full"
-            >
-              Search in chats
-            </Link>
           </SidebarGroup>
         </SidebarHeader>
-        <SidebarContent>
+        <SidebarContent className="">
           <Collapsible defaultOpen={true}>
             <SidebarGroup>
               <SidebarGroupLabel asChild className="text-gray-400">
