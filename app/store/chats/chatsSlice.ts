@@ -210,7 +210,7 @@ export const streamMessage = createAsyncThunk<
         text: "",
         owner: "ai",
         chatId,
-        loading: "succeeded",
+        loading: "pending",
       })
     );
 
@@ -219,26 +219,54 @@ export const streamMessage = createAsyncThunk<
       body: JSON.stringify({ prompt: newMessage, model, chatId }),
     });
 
-    if (!res.body) throw new Error("No response body");
+    if (!res.body) {
+      dispatch(
+        setMessageStatus({
+          chatId,
+          messageId: msgId,
+          loading: "failed",
+        })
+      );
+      throw new Error("No response body");
+    }
 
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      const chunk = decoder.decode(value);
+        const chunk = decoder.decode(value);
+        dispatch(
+          addMessage({
+            id: msgId,
+            text: chunk,
+            owner: "ai",
+            chatId,
+            append: true,
+            loading: "pending",
+          })
+        );
+      }
+
       dispatch(
-        addMessage({
-          id: msgId,
-          text: chunk,
-          owner: "ai",
+        setMessageStatus({
           chatId,
-          append: true,
+          messageId: msgId,
           loading: "succeeded",
         })
       );
+    } catch (e) {
+      dispatch(
+        setMessageStatus({
+          chatId,
+          messageId: msgId,
+          loading: "failed",
+        })
+      );
+      throw e;
     }
   }
 );
