@@ -7,7 +7,7 @@ import { registerSchema, TRegisterValues } from "./schema";
 import Link from "next/link";
 
 import { useRouter } from "next/navigation";
-import { registerUser } from "@app/api/action";
+import { registerUser } from "@/app/api/action";
 
 export const RegisterMenu = () => {
   const navigate = useRouter();

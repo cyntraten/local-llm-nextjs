@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Logo } from "../ui/icons/logo";
 import { Session } from "next-auth";
 
