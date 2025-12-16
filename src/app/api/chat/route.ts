@@ -1,8 +1,8 @@
+import { ollamaClient } from "@/lib/ollama-client";
 import { buildPromptWithSystem } from "@/lib/sendMessages";
 import { getUserSessionId } from "@/shared/lib/auth/get-user-session-id";
 import { prisma } from "@/shared/lib/prisma/prisma-client";
 import { NextRequest, NextResponse } from "next/server";
-import ollama from "ollama";
 
 //TODO DRY
 function cleanResponse(text: string): string {
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          const response = await ollama.chat({
+          const response = await ollamaClient.chat({
             model,
             messages: [{ role: "user", content: promptWithSystem }],
             stream: true,
